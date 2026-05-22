@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>🍿 Movie Review App - สังคมนักวิจารณ์หนัง</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen p-4 md:p-8">
+<div class="container mx-auto max-w-6xl">
+
+    <!-- Header -->
+    <div class="mb-8 border-b border-gray-800 pb-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-black text-amber-400 tracking-wide">🍿 MOVIE REVIEW DATA APP</h1>
+            <p class="text-gray-500 text-sm">รายวิชา CS104 Introduction to Database มินิโปรเจกต์</p>
+        </div>
+        <span class="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold px-4 py-1.5 rounded-full">Relational Database 5 Tables</span>
+    </div>
+
+    <!-- Create Form -->
+    <div class="bg-gray-900 p-6 rounded-xl border border-gray-800 shadow-xl mb-6">
+        <h2 class="text-lg font-bold text-amber-300 mb-4">✍️ แบ่งปันรีวิวภาพยนตร์ของคุณ</h2>
+        <form action="/create" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="md:col-span-2">
+                <label class="block text-xs font-bold text-gray-400 uppercase">ข้อความรีวิว</label>
+                <input type="text" name="review_text" placeholder="หนังเรื่องนี้เป็นอย่างไรบ้าง..." required
+                       class="w-full mt-1 p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-amber-400">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase">เลือกภาพยนตร์</label>
+                <select name="movie_id" class="w-full mt-1 p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white">
+                    {% for movie in movies %}
+                    <option value="{{ movie.movie_id }}">{{ movie.title }} ({{ movie.release_year }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase">ผู้รีวิว <span class="normal-case text-gray-500 font-normal">(พิมพ์ชื่อได้เลย)</span></label>
+                <input type="text" name="username_input" list="user-suggestions"
+                       placeholder="เช่น สมชาย, Alice, …" required autocomplete="off"
+                       class="w-full mt-1 p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-amber-400">
+                <datalist id="user-suggestions">
+                    {% for user in users %}
+                    <option value="{{ user.username }}">
+                    {% endfor %}
+                </datalist>
+            </div>
+            <div class="md:col-span-4 flex justify-between items-center mt-2">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase">ให้คะแนน</label>
+                    <select name="rating" class="mt-1 p-2 bg-gray-800 border border-gray-700 rounded-lg text-amber-400 font-bold">
+                        <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                        <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                        <option value="3">⭐⭐⭐ (3/5)</option>
+                        <option value="2">⭐⭐ (2/5)</option>
+                        <option value="1">⭐ (1/5)</option>
+                    </select>
+                </div>
+                <button type="submit" class="bg-amber-400 hover:bg-amber-500 text-gray-950 font-black px-8 py-2.5 rounded-lg transition duration-150 shadow-md">
+                    🚀 โพสต์ข้อความรีวิว
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ===== FILTER BAR (6 ตัวกรอง) ===== -->
+    <div class="bg-gray-900 p-5 rounded-xl border border-gray-800 shadow mb-4">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-gray-300 uppercase tracking-widest">🔎 ตัวกรองข้อมูล</h3>
+            {% set active_filters = [sel_movie, sel_user, sel_genre, sel_director, sel_rating, sel_year] | select | list %}
+            {% if active_filters %}
+            <span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs px-3 py-1 rounded-full font-bold">
+                กำลังกรอง {{ active_filters | length }} ตัวกรอง
+            </span>
+            {% endif %}
+        </div>
+
+        <form method="GET" action="/">
+            <!-- Row 1: Movie, User, Genre -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
+
+                <!-- ภาพยนตร์ -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">🎬 ภาพยนตร์</label>
+                    <select name="movie_id" class="w-full p-2.5 bg-gray-800 border {% if sel_movie %}border-amber-500{% else %}border-gray-700{% endif %} rounded-lg text-white text-sm focus:outline-none focus:border-amber-400">
+                        <option value="">— ทุกเรื่อง —</option>
+                        {% for movie in movies %}
+                        <option value="{{ movie.movie_id }}" {% if sel_movie == movie.movie_id|string %}selected{% endif %}>
+                            {{ movie.title }} ({{ movie.release_year }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- ผู้รีวิว -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">👤 ผู้รีวิว</label>
+                    <select name="user_id" class="w-full p-2.5 bg-gray-800 border {% if sel_user %}border-amber-500{% else %}border-gray-700{% endif %} rounded-lg text-white text-sm focus:outline-none focus:border-amber-400">
+                        <option value="">— ทุกคน —</option>
+                        {% for user in users %}
+                        <option value="{{ user.user_id }}" {% if sel_user == user.user_id|string %}selected{% endif %}>
+                            {{ user.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- หมวดหมู่ -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">🏷️ หมวดหมู่ (Genre)</label>
+                    <select name="genre_id" class="w-full p-2.5 bg-gray-800 border {% if sel_genre %}border-amber-500{% else %}border-gray-700{% endif %} rounded-lg text-white text-sm focus:outline-none focus:border-amber-400">
+                        <option value="">— ทุกหมวด —</option>
+                        {% for g in genres %}
+                        <option value="{{ g.genre_id }}" {% if sel_genre == g.genre_id|string %}selected{% endif %}>
+                            {{ g.genre_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- ผู้กำกับ -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">🎥 ผู้กำกับ (Director)</label>
+                    <select name="director_id" class="w-full p-2.5 bg-gray-800 border {% if sel_director %}border-amber-500{% else %}border-gray-700{% endif %} rounded-lg text-white text-sm focus:outline-none focus:border-amber-400">
+                        <option value="">— ทุกคน —</option>
+                        {% for d in directors %}
+                        <option value="{{ d.director_id }}" {% if sel_director == d.director_id|string %}selected{% endif %}>
+                            {{ d.director_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- คะแนนดาว -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">⭐ คะแนนดาว</label>
+                    <select name="rating" class="w-full p-2.5 bg-gray-800 border {% if sel_rating %}border-amber-500{% else %}border-gray-700{% endif %} rounded-lg text-amber-400 text-sm font-bold focus:outline-none focus:border-amber-400">
+                        <option value="">— ทุกคะแนน —</option>
+                        <option value="5" {% if sel_rating == '5' %}selected{% endif %}>⭐⭐⭐⭐⭐  5 ดาว</option>
+                        <option value="4" {% if sel_rating == '4' %}selected{% endif %}>⭐⭐⭐⭐    4 ดาว</option>
+                        <option value="3" {% if sel_rating == '3' %}selected{% endif %}>⭐⭐⭐      3 ดาว</option>
+                        <option value="2" {% if sel_rating == '2' %}selected{% endif %}>⭐⭐        2 ดาว</option>
+                        <option value="1" {% if sel_rating == '1' %}selected{% endif %}>⭐          1 ดาว</option>
+                    </select>
+                </div>
+
+                <!-- ปีที่ฉาย -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">📅 ปีที่ฉาย</label>
+                    <select name="year" class="w-full p-2.5 bg-gray-800 border {% if sel_year %}border-amber-500{% else %}border-gray-700{% endif %} rounded-lg text-white text-sm focus:outline-none focus:border-amber-400">
+                        <option value="">— ทุกปี —</option>
+                        {% for y in years %}
+                        <option value="{{ y.release_year }}" {% if sel_year == y.release_year|string %}selected{% endif %}>
+                            {{ y.release_year }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Action buttons + result count -->
+            <div class="flex items-center justify-between flex-wrap gap-3 pt-2 border-t border-gray-800">
+                <div class="flex gap-2">
+                    <button type="submit"
+                            class="bg-amber-400 hover:bg-amber-500 text-gray-950 font-black px-6 py-2 rounded-lg transition text-sm">
+                        🔍 กรองข้อมูล
+                    </button>
+                    <a href="/"
+                       class="bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold px-6 py-2 rounded-lg transition text-sm">
+                        ✖ รีเซตทั้งหมด
+                    </a>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-gray-500">ผลลัพธ์ที่ตรงกัน</span>
+                    <span class="text-amber-400 font-black text-xl ml-1">{{ total_count }}</span>
+                    <span class="text-xs text-gray-500">รายการ</span>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Dashboard Table -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 shadow-xl overflow-hidden">
+        <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+            <h3 class="font-bold text-amber-400">📊 แดชบอร์ดติดตามและจัดการข้อมูล (SQL JOIN 5 Tables)</h3>
+            <span class="text-xs text-gray-500">หน้า {{ current_page }} / {{ total_pages }} &nbsp;·&nbsp; {{ reviews|length }} จาก {{ total_count }} รายการ</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-800 text-gray-400 text-xs font-bold uppercase border-b border-gray-700">
+                        <th class="px-5 py-3">ID</th>
+                        <th class="px-5 py-3">ภาพยนตร์</th>
+                        <th class="px-5 py-3">Genre / Director</th>
+                        <th class="px-5 py-3">ข้อความรีวิว</th>
+                        <th class="px-5 py-3">ดาว</th>
+                        <th class="px-5 py-3">ผู้รีวิว</th>
+                        <th class="px-5 py-3 text-center">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm divide-y divide-gray-800">
+                    {% for r in reviews %}
+                    <tr class="hover:bg-gray-800/60 transition">
+                        <td class="px-5 py-4 text-gray-600 font-mono">#{{ r.review_id }}</td>
+                        <td class="px-5 py-4">
+                            <a href="/?movie_id={{ r.movie_id }}" class="font-bold text-white hover:text-amber-400 transition block">{{ r.title }}</a>
+                            <a href="/?year={{ r.release_year }}" class="text-xs text-gray-500 hover:text-amber-400 transition">ปี {{ r.release_year }}</a>
+                        </td>
+                        <td class="px-5 py-4">
+                            <a href="/?genre_id={{ r.genre_id }}" class="bg-amber-400/10 text-amber-400 text-xs px-2 py-0.5 rounded border border-amber-400/20 hover:bg-amber-400/20 transition inline-block">{{ r.genre_name }}</a>
+                            <a href="/?director_id={{ r.director_id }}" class="block text-xs text-gray-400 mt-1.5 hover:text-amber-400 transition">🎬 {{ r.director_name }}</a>
+                        </td>
+                        <td class="px-5 py-4">
+                            <form action="/update/{{ r.review_id }}" method="POST" id="form-{{ r.review_id }}">
+                                <input type="hidden" name="filter_movie_id"    value="{{ sel_movie }}">
+                                <input type="hidden" name="filter_user_id"     value="{{ sel_user }}">
+                                <input type="hidden" name="filter_genre_id"    value="{{ sel_genre }}">
+                                <input type="hidden" name="filter_director_id" value="{{ sel_director }}">
+                                <input type="hidden" name="filter_rating"      value="{{ sel_rating }}">
+                                <input type="hidden" name="filter_year"        value="{{ sel_year }}">
+                                <input type="hidden" name="page"               value="{{ current_page }}">
+                                <input type="text" name="review_text" value="{{ r.review_text }}"
+                                       class="bg-transparent border border-transparent focus:bg-gray-800 focus:border-gray-700 rounded px-2 py-1 text-gray-200 w-full focus:outline-none focus:ring-1 focus:ring-amber-400">
+                        </td>
+                        <td class="px-5 py-4">
+                                <select name="rating" onchange="document.getElementById('form-{{ r.review_id }}').submit()"
+                                        class="bg-gray-800 border border-gray-700 text-amber-400 font-mono text-xs p-1 rounded">
+                                    <option value="5" {% if r.rating==5 %}selected{% endif %}>⭐⭐⭐⭐⭐</option>
+                                    <option value="4" {% if r.rating==4 %}selected{% endif %}>⭐⭐⭐⭐</option>
+                                    <option value="3" {% if r.rating==3 %}selected{% endif %}>⭐⭐⭐</option>
+                                    <option value="2" {% if r.rating==2 %}selected{% endif %}>⭐⭐</option>
+                                    <option value="1" {% if r.rating==1 %}selected{% endif %}>⭐</option>
+                                </select>
+                            </form>
+                        </td>
+                        <td class="px-5 py-4">
+                            <a href="/?user_id={{ r.user_id }}" class="text-gray-300 font-medium hover:text-amber-400 transition">👤 {{ r.username }}</a>
+                        </td>
+                        <td class="px-5 py-4 text-center">
+                            <a href="/delete/{{ r.review_id }}?movie_id={{ sel_movie }}&user_id={{ sel_user }}&genre_id={{ sel_genre }}&director_id={{ sel_director }}&rating={{ sel_rating }}&year={{ sel_year }}&page={{ current_page }}"
+                               onclick="return confirm('ต้องการลบรีวิวนี้ใช่หรือไม่?')"
+                               class="text-xs bg-red-950 text-red-400 border border-red-900/50 px-3 py-1.5 rounded-lg hover:bg-red-900 hover:text-white transition font-bold">
+                                ❌ ลบ
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% if reviews|length == 0 %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-14 text-center text-gray-600">
+                            <div class="text-5xl mb-3">🔍</div>
+                            <div class="font-bold text-gray-500">ไม่พบข้อมูลที่ตรงกับเงื่อนไขที่เลือก</div>
+                            <a href="/" class="text-amber-400 text-sm hover:underline mt-2 inline-block">ล้างตัวกรองทั้งหมด</a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ===== PAGINATION ===== -->
+        {% if total_pages > 1 %}
+        <div class="px-6 py-4 border-t border-gray-800 flex items-center justify-between flex-wrap gap-3">
+            <span class="text-xs text-gray-500">
+                แสดง {{ (current_page-1)*per_page+1 }}–{{ [current_page*per_page, total_count]|min }} จาก {{ total_count }} รายการ
+            </span>
+            {% set base = "?movie_id="~sel_movie~"&user_id="~sel_user~"&genre_id="~sel_genre~"&director_id="~sel_director~"&rating="~sel_rating~"&year="~sel_year %}
+            <div class="flex items-center gap-1">
+                {% if current_page > 1 %}
+                <a href="{{ base }}&page=1"                        class="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700 transition font-bold">«</a>
+                <a href="{{ base }}&page={{ current_page-1 }}"     class="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700 transition font-bold">‹ ก่อนหน้า</a>
+                {% else %}
+                <span class="px-3 py-1.5 text-xs bg-gray-900 text-gray-700 rounded-lg border border-gray-800 font-bold cursor-not-allowed">«</span>
+                <span class="px-3 py-1.5 text-xs bg-gray-900 text-gray-700 rounded-lg border border-gray-800 font-bold cursor-not-allowed">‹ ก่อนหน้า</span>
+                {% endif %}
+
+                {% for p in range(1, total_pages+1) %}
+                    {% if p == current_page %}
+                    <span class="px-3 py-1.5 text-xs bg-amber-400 text-gray-950 rounded-lg font-black shadow">{{ p }}</span>
+                    {% elif p==1 or p==total_pages or (p >= current_page-2 and p <= current_page+2) %}
+                    <a href="{{ base }}&page={{ p }}" class="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700 transition font-bold">{{ p }}</a>
+                    {% elif p == current_page-3 or p == current_page+3 %}
+                    <span class="px-1 text-gray-600 text-xs">…</span>
+                    {% endif %}
+                {% endfor %}
+
+                {% if current_page < total_pages %}
+                <a href="{{ base }}&page={{ current_page+1 }}"  class="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700 transition font-bold">ถัดไป ›</a>
+                <a href="{{ base }}&page={{ total_pages }}"      class="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg border border-gray-700 transition font-bold">»</a>
+                {% else %}
+                <span class="px-3 py-1.5 text-xs bg-gray-900 text-gray-700 rounded-lg border border-gray-800 font-bold cursor-not-allowed">ถัดไป ›</span>
+                <span class="px-3 py-1.5 text-xs bg-gray-900 text-gray-700 rounded-lg border border-gray-800 font-bold cursor-not-allowed">»</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div><!-- end dashboard -->
+</div><!-- end container -->
+</body>
+</html>
